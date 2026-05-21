@@ -3,17 +3,18 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     public float moveSpeed = 5f;
-    private Rigidbody rb;
-    private void Start()
+    private CharacterController cc;
+
+    void Start()
     {
-        rb = GetComponent<Rigidbody>();
+        cc = GetComponent<CharacterController>();
     }
 
     void FixedUpdate()
     {
-        float moveX = Input.GetAxis("Horizontal");
-        float moveY = Input.GetAxis("Vertical");
-        Vector3 movement = new Vector3(moveX, 0, moveY) * moveSpeed;
-        rb.linearVelocity = movement;
+        float h = Input.GetAxis("Horizontal");
+        float v = Input.GetAxis("Vertical");
+        Vector3 move = new Vector3(h, 0, v) * moveSpeed;
+        cc.Move(move * Time.deltaTime);
     }
 }
