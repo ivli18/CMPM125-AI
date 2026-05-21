@@ -1,9 +1,12 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections.Generic;
 public class GuardAgent : MonoBehaviour
 {
     [SerializeField] private Camera cam;
     private NavMeshAgent agent;
+    [SerializeField] private List<Transform> waypoints;
+    private int currentWaypointIndex = 0;
 
     private void Awake()
     {
@@ -13,14 +16,34 @@ public class GuardAgent : MonoBehaviour
         {
             cam = Camera.main;
         }
+
+        if (waypoints.Count > 0)
+        {
+            agent.SetDestination(waypoints[currentWaypointIndex].position);
+        }
     }
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        //Check if the agent is close to the current waypoint
+        if (!agent.pathPending && agent.remainingDistance < 0.5f)
         {
-            MoveAgentToClickedPoint();
+            GoToNextWaypoint();
         }
+        
+        // Test code
+        //if (Input.GetMouseButtonDown(0))
+        //{
+        //    MoveAgentToClickedPoint();
+        //}
+    }
+
+    private void GoToNextWaypoint()
+    {
+        if (waypoints.Count == 0) return;
+
+        currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.Count;
+        agent.SetDestination(waypoints[currentWaypointIndex].position);
     }
 
     // Test method to move the agent to a point clicked by the user.
