@@ -28,6 +28,9 @@ public class GuardAgent : MonoBehaviour
     [SerializeField] private float suspicionDrainRate = 15f;
     [SerializeField] private float confusedDuration = 3f;
 
+    [Header("Visualizers")]
+    private GuardVisionCone visionCone;
+
     [Header("State Colors")]
     [SerializeField] private Color roamingColor = Color.green;
     [SerializeField] private Color suspiciousColor = Color.yellow;
@@ -48,6 +51,7 @@ public class GuardAgent : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         rend = GetComponent<Renderer>();
         player = GameObject.FindWithTag("Player").transform;
+        visionCone = GetComponent<GuardVisionCone>();
 
         if (cam == null)
         {
@@ -68,6 +72,7 @@ public class GuardAgent : MonoBehaviour
         UpdateSuspicionMeter(canSee);
         UpdateStateTransitions(canSee);
         UpdateStateBehavior();
+        UpdateVisualizers();
     }
 
     private void GoToNextWaypoint()
@@ -152,6 +157,10 @@ public class GuardAgent : MonoBehaviour
                 break;
         }
     }
+    private void UpdateVisualizers()
+    {
+        visionCone.UpdateVision(coneRange, coneAngle, circleRadius, rend.material.color, suspicionMeter);
+    }
 
     /*
     === STATES ===
@@ -167,13 +176,17 @@ public class GuardAgent : MonoBehaviour
         {
             case GuardState.Roaming:
                 // Original patrol logic from your teammate
+                agent.speed = 3.5f;
                 if (!agent.pathPending && agent.remainingDistance < 0.5f)
                     GoToNextWaypoint();
                 break;
 
             case GuardState.Suspicious:
-                // Slowly move toward last known position
-                agent.SetDestination(lastKnownPosition);
+                // Stop and stare at player
+                agent.SetDestination(transform.position);
+                Vector3 dir = player.position - transform.position;
+                dir.y = 0;
+                transform.rotation = Quaternion.LookRotation(dir);
                 break;
 
             case GuardState.Confused:
@@ -182,7 +195,8 @@ public class GuardAgent : MonoBehaviour
                 break;
 
             case GuardState.Alerted:
-                // Actively chase
+                // Fast chase — game over if caught
+                agent.speed = 8f;
                 agent.SetDestination(player.position);
                 break;
         }
