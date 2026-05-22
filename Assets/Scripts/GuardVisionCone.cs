@@ -2,24 +2,15 @@ using UnityEngine;
 
 public class GuardVisionCone : MonoBehaviour
 {
-    [Header("Cone Settings")]
-    public float range = 10f;
-    public float angle = 60f;
-    public int resolution = 30; // smoothness
-
-    [Header("Circle Settings")]
-    public float circleRadius = 2f;
-    public int circleResolution = 30;
-
-    private Mesh coneMesh;
-    private Mesh circleMesh;
+    [SerializeField] private int resolution = 30;
+    [SerializeField] private int circleResolution = 30;
 
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
     private Material coneMaterial;
-
-    // Combined mesh
     private Mesh combinedMesh;
+
+    private float range, angle, circleRadius;
 
     void Awake()
     {
@@ -30,16 +21,14 @@ public class GuardVisionCone : MonoBehaviour
         meshFilter = vizObj.AddComponent<MeshFilter>();
         meshRenderer = vizObj.AddComponent<MeshRenderer>();
 
-        // Create a material with transparency
         coneMaterial = new Material(Shader.Find("Legacy Shaders/Transparent/Diffuse"));
-        coneMaterial.color = new Color(0f, 1f, 0f, 0.2f); // start green, low alpha
+        coneMaterial.color = new Color(0f, 1f, 0f, 0.2f);
         meshRenderer.material = coneMaterial;
 
         combinedMesh = new Mesh();
         meshFilter.mesh = combinedMesh;
     }
 
-    // Call this every frame from GuardAgent
     public void UpdateVision(float coneRange, float coneAngle, float circleRadius, Color stateColor, float suspicionMeter)
     {
         this.range = coneRange;
@@ -54,21 +43,18 @@ public class GuardVisionCone : MonoBehaviour
 
     private void BuildCombinedMesh()
     {
-        // --- CONE MESH (triangle fan) ---
-        int coneVerts = resolution + 2; // origin + arc points + close
+        int coneVerts = resolution + 2;
         Vector3[] coneVertices = new Vector3[coneVerts];
         int[] coneTriangles = new int[resolution * 3];
 
-        coneVertices[0] = Vector3.up * 0.05f; // origin slightly above floor
-
+        coneVertices[0] = Vector3.up * 0.05f;
         float halfAngle = angle / 2f;
+
         for (int i = 0; i <= resolution; i++)
         {
             float t = (float)i / resolution;
             float a = Mathf.Lerp(-halfAngle, halfAngle, t) * Mathf.Deg2Rad;
-            float x = Mathf.Sin(a) * range;
-            float z = Mathf.Cos(a) * range;
-            coneVertices[i + 1] = new Vector3(x, 0.05f, z);
+            coneVertices[i + 1] = new Vector3(Mathf.Sin(a) * range, 0.05f, Mathf.Cos(a) * range);
         }
 
         for (int i = 0; i < resolution; i++)
@@ -78,7 +64,6 @@ public class GuardVisionCone : MonoBehaviour
             coneTriangles[i * 3 + 2] = i + 2;
         }
 
-        // --- CIRCLE MESH (triangle fan) ---
         int circleVerts = circleResolution + 2;
         Vector3[] circleVertices = new Vector3[circleVerts];
         int[] circleTriangles = new int[circleResolution * 3];
@@ -88,30 +73,24 @@ public class GuardVisionCone : MonoBehaviour
         for (int i = 0; i <= circleResolution; i++)
         {
             float a = (float)i / circleResolution * 360f * Mathf.Deg2Rad;
-            float x = Mathf.Cos(a) * circleRadius;
-            float z = Mathf.Sin(a) * circleRadius;
-            circleVertices[i + 1] = new Vector3(x, 0.05f, z);
+            circleVertices[i + 1] = new Vector3(Mathf.Cos(a) * circleRadius, 0.05f, Mathf.Sin(a) * circleRadius);
         }
 
         for (int i = 0; i < circleResolution; i++)
         {
             circleTriangles[i * 3 + 0] = 0;
-            circleTriangles[i * 3 + 1] = i + 1;
-            circleTriangles[i * 3 + 2] = i + 2;
+            circleTriangles[i * 3 + 1] = i + 2;
+            circleTriangles[i * 3 + 2] = i + 1;
         }
 
-        // --- COMBINE INTO ONE MESH ---
         combinedMesh.Clear();
 
-        // Offset circle vertices so indices don't clash
         Vector3[] allVerts = new Vector3[coneVerts + circleVerts];
         coneVertices.CopyTo(allVerts, 0);
         circleVertices.CopyTo(allVerts, coneVerts);
 
         int[] allTris = new int[coneTriangles.Length + circleTriangles.Length];
         coneTriangles.CopyTo(allTris, 0);
-
-        // Offset circle triangle indices
         for (int i = 0; i < circleTriangles.Length; i++)
             allTris[coneTriangles.Length + i] = circleTriangles[i] + coneVerts;
 
