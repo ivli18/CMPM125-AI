@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
@@ -23,5 +24,11 @@ public class PlayerController : MonoBehaviour
     {
         winPanel.SetActive(true);
         Time.timeScale = 0f;
+    }
+
+    public void TriggerLose()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

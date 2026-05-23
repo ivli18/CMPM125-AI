@@ -143,6 +143,8 @@ public class GuardAgent : MonoBehaviour
             case GuardState.Alerted:
                 agent.speed = 8f;
                 agent.SetDestination(player.position);
+                if (Vector3.Distance(transform.position, player.position) < 1.2f)
+                    player.GetComponent<PlayerController>().TriggerLose();
                 break;
         }
     }
